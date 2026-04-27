@@ -1,0 +1,308 @@
+version: '3.8'
+
+networks:
+  ticketmaster-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+
+services:
+  # ==========================================
+  # 1. ORTAQ İNFRASTRUKTUR
+  # ==========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: ticketmaster-postgres
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - ticketmaster-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: ticketmaster-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - ticketmaster-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: ticketmaster-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - ticketmaster-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: ticketmaster-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: ticketmaster-zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://ticketmaster-kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - ticketmaster-network
+
+  # ==========================================
+  # 2. EUREKA
+  # ==========================================
+  eureka-server:
+    build: ../discovery-serverr
+    container_name: ticketmaster-eureka
+    ports:
+      - "8761:8761"
+    networks:
+      - ticketmaster-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ==========================================
+  # 3. MİKROSERVİSLƏR
+  # ==========================================
+  user-service:
+    build: ../ticketmaster-user-service
+    container_name: ticketmaster-user-service
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://ticketmaster-postgres:5432/user_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_SERVERS}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+    networks:
+      - ticketmaster-network
+
+  event-service-1:
+    build: ../ticketmaster-event-service
+    container_name: ticketmaster-event-1
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://ticketmaster-postgres:5432/event_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_SERVERS}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+    networks:
+      - ticketmaster-network
+
+  event-service-2:
+    build: ../ticketmaster-event-service
+    container_name: ticketmaster-event-2
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://ticketmaster-postgres:5432/event_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_SERVERS}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+      SERVER_PORT: 8083
+    networks:
+      - ticketmaster-network
+
+  event-service-3:
+    build: ../ticketmaster-event-service
+    container_name: ticketmaster-event-3
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://ticketmaster-postgres:5432/event_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_SERVERS}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+      SERVER_PORT: 8084
+    networks:
+      - ticketmaster-network
+
+  ticket-service:
+    build: ../ticketmaster-ticket-service
+    container_name: ticketmaster-ticket-service
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://ticketmaster-postgres:5432/ticket_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_SERVERS}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+    networks:
+      - ticketmaster-network
+
+  order-service:
+    build: ../ticketmaster-order-service
+    container_name: ticketmaster-order-service
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://ticketmaster-postgres:5432/order_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_SERVERS}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+    networks:
+      - ticketmaster-network
+
+  payment-service:
+    build: ../ticketmaster-payment-service
+    container_name: ticketmaster-payment-service
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    ports:
+      - "8087:8087"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://ticketmaster-postgres:5432/payment_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_SERVERS}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+    networks:
+      - ticketmaster-network
+
+  notification-service:
+    build: ../ticketmaster-notification-service
+    container_name: ticketmaster-notification-service
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    ports:
+      - "8088:8088"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://ticketmaster-postgres:5432/notification_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_SERVERS}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+      MAIL_PASSWORD: ${NOTIFICATION_MAIL_PASSWORD}
+    networks:
+      - ticketmaster-network
+
+  # ==========================================
+  # 4. API GATEWAY
+  # ==========================================
+  api-gateway:
+    build: ../ticketmaster-api-gateway
+    container_name: ticketmaster-gateway
+    env_file:
+      - .env
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      user-service:
+        condition: service_started
+      event-service-1:
+        condition: service_started
+      ticket-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+    networks:
+      - ticketmaster-network

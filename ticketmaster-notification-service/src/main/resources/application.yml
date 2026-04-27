@@ -1,0 +1,46 @@
+server:
+  port: 8088
+
+spring:
+  application:
+    name: TICKETMASTER-NOTIFICATION-SERVICE  # ✅ böyük hərflə
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:ticketmaster-postgres}:5432/notification_db
+    username: postgres
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_URL:ticketmaster-kafka:29092}
+    consumer:
+      group-id: notification-group-v2026
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer  # ✅ dəyişdi
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: abdullayevala91@gmail.com
+    password: ${MAIL_PASSWORD:senin_app_parolun}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.timeout: 5000
+      mail.smtp.connectiontimeout: 5000
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://ticketmaster-eureka:8761/eureka/}
+
+logging:
+  level:
+    org.springframework.kafka: DEBUG
+    com.ticketmaster.ticketmasternotificationservice: DEBUG

@@ -1,0 +1,39 @@
+type Query {
+    getEventById(id: ID!): EventResponse
+    getAllEvents(filter: EventFilterRequest, page: Int!, size: Int!): [EventResponse]
+}
+
+type Mutation {
+    createEvent(request: CreateEventRequest!): EventResponse
+    updateEvent(id: ID!, request: UpdateEventRequest!): EventResponse
+    deleteEvent(id: ID!): Boolean
+}
+
+type EventResponse {
+    id: ID
+    name: String
+    description: String
+    eventDate: String
+    totalCapacity: Int
+    availableTickets: Int
+    status: String
+}
+
+input CreateEventRequest {
+    name: String!
+    venueId: Int!
+    totalCapacity: Int!
+    eventDate: String!
+}
+
+input UpdateEventRequest {
+    name: String
+    venueId: Int
+    totalCapacity: Int
+    eventDate: String
+}
+
+input EventFilterRequest {
+    name: String
+    eventStatus: String
+}

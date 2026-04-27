@@ -1,0 +1,28 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: TICKETMASTER-PAYMENT-SERVICE  # ✅ DÜZƏLDİLDİ
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:ticketmaster-postgres}:5432/payment_db
+    username: postgres
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_URL:ticketmaster-kafka:29092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer  # ✅ DÜZƏLDİLDİ
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://ticketmaster-eureka:8761/eureka/}
