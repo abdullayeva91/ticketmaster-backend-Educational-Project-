@@ -16,13 +16,15 @@ public class CorsConfig {
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration corsConfig = new CorsConfiguration();
 
-        // ============================================
-        // ALLOWED ORIGINS (React-in portuna icazə veririk)
-        // ============================================
-        corsConfig.setAllowedOrigins(Arrays.asList(
+        // ============================================================
+        // ALLOWED ORIGINS (Bütün Vercel və Lokal variantlara icazə veririk)
+        // ============================================================
+        corsConfig.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:3000",
+                "https://ticketmaster-frontend-*.vercel.app", // Bütün Vercel alt-domenləri üçün
                 "https://ticketmaster-frontend-ten.vercel.app"
         ));
+
         // ============================================
         // ALLOWED METHODS
         // ============================================
@@ -51,7 +53,7 @@ public class CorsConfig {
         ));
 
         // ============================================
-        // CREDENTIALS (Tokenlərin keçməsi üçün TRUE edirik)
+        // CREDENTIALS
         // ============================================
         corsConfig.setAllowCredentials(true);
 
