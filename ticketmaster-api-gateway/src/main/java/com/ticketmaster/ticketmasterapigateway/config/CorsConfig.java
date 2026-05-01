@@ -19,8 +19,10 @@ public class CorsConfig {
         // ============================================
         // ALLOWED ORIGINS (React-in portuna icazə veririk)
         // ============================================
-        corsConfig.setAllowedOrigins(Collections.singletonList("http://localhost:3000"));
-
+        corsConfig.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3000",
+                "https://ticketmaster-frontend-ten.vercel.app"
+        ));
         // ============================================
         // ALLOWED METHODS
         // ============================================
