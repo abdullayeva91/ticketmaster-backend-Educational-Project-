@@ -1,4 +1,4 @@
-package com.ticketmaster.ticketmasternotificatinservice.model;
+package com.ticketmaster.ticketmasternotificationservice.model;
 
 import com.ticketmaster.ticketmasternotificatinservice.enums.NotificationStatus;
 import com.ticketmaster.ticketmasternotificatinservice.enums.NotificationType;
@@ -32,6 +32,7 @@ public class Notification {
     @Column(columnDefinition = "TEXT")
     private String message;
 
+    @Column(columnDefinition = "TEXT")
     private String errorMessage;
 
     private LocalDateTime created;

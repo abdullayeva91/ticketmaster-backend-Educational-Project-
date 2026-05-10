@@ -1,8 +1,7 @@
-package com.ticketmaster.ticketmasternotificatinservice.service;
+package com.ticketmaster.ticketmasternotificationservice.service;
 
 import com.ticketmaster.ticketmasternotificatinservice.enums.NotificationStatus;
 import com.ticketmaster.ticketmasternotificatinservice.enums.NotificationType;
-import com.ticketmaster.ticketmasternotificatinservice.event.*;
 import com.ticketmaster.ticketmasternotificatinservice.model.Notification;
 import com.ticketmaster.ticketmasternotificatinservice.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,9 +15,9 @@ import java.time.LocalDateTime;
 @Slf4j
 public class NotificationService {
     private final NotificationRepository notificationRepository;
-    private final EmailService emailService;
+    private final com.ticketmaster.ticketmasternotificatinservice.service.EmailService emailService;
 
-    public void processPaymentSuccess(PaymentSuccessEvent event) {
+    public void processPaymentSuccess(com.ticketmaster.ticketmasternotificatinservice.event.PaymentSuccessEvent event) {
         log.info("Kafka-dan uğurlu ödəniş xəbəri gəldi. Sifariş ID: {}", event.orderId());
 
         String subject = "TicketMaster - Uğurlu Ödəniş";
@@ -52,7 +51,7 @@ public class NotificationService {
             log.error("Bildiriş göndərilə bilmədi! Səbəb: {}", e.getMessage());
         }
     }
-    public void processPaymentFailed(PaymentFailedEvent event) {
+    public void processPaymentFailed(com.ticketmaster.ticketmasternotificatinservice.event.PaymentFailedEvent event) {
         log.info("Kafka-dan uğursuz ödəniş xəbəri gəldi. Sifariş ID: {}", event.orderId());
         String subject = "TicketMaster - Ödəniş Alınmadı ";
         String text = String.format("Hörmətli müştəri, %d nömrəli sifarişiniz üçün ödəniş uğursuz oldu. \nSəbəb: %s. \nXahiş edirik, başqa bir kartla yenidən cəhd edin.",
@@ -85,7 +84,7 @@ public class NotificationService {
             log.error("Bildiriş göndərilə bilmədi! Səbəb: {}", e.getMessage());
         }
     }
-    public void processUserRegistration(UserRegisteredEvent event) {
+    public void processUserRegistration(com.ticketmaster.ticketmasternotificatinservice.event.UserRegisteredEvent event) {
         log.info("Kafka-dan qeydiyyat xəbəri gəldi. Email: {}", event.email());
         String subject = "TicketMaster - Qeydiyyatınız Uğurla Tamamlandı! 🎉";
         String text = String.format("Xoş gəldiniz, %s! TicketMaster ailəsinə qatıldığınız üçün təşəkkür edirik. Hesabınız uğurla yaradıldı.",
@@ -120,7 +119,7 @@ public class NotificationService {
         }
     }
 
-    public void processOrderCreated(OrderCreatedEvent event) {
+    public void processOrderCreated(com.ticketmaster.ticketmasternotificatinservice.event.OrderCreatedEvent event) {
         log.info("Kafka-dan sifariş xəbəri gəldi. OrderId: {}", event.orderId());
 
         String subject = "TicketMaster - Sifarişiniz Qəbul Edildi 🎫";
@@ -155,7 +154,7 @@ public class NotificationService {
             log.error("Sifariş bildirişi göndərilə bilmədi: {}", e.getMessage());
         }
     }
-    public void processForgotPassword(ForgotPasswordEvent event) {
+    public void processForgotPassword(com.ticketmaster.ticketmasternotificatinservice.event.ForgotPasswordEvent event) {
         log.info("Kafka-dan şifrə sıfırlama xəbəri gəldi. Email: {}", event.email());
 
         String subject = "TicketMaster - Şifrə Sıfırlama Kodu 🔐";
@@ -189,7 +188,7 @@ public class NotificationService {
             log.error("Şifrə sıfırlama bildirişi göndərilə bilmədi: {}", e.getMessage());
         }
     }
-    public void processPasswordChanged(PasswordChangedEvent event) {
+    public void processPasswordChanged(com.ticketmaster.ticketmasternotificatinservice.event.PasswordChangedEvent event) {
         log.info("Şifrə yenilənmə emaili hazırlanır. Email: {}", event.email());
 
         String subject = "TicketMaster - Şifrəniz Yeniləndi ✅";
