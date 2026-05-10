@@ -1,32 +1,37 @@
-package com.ticketmaster.ticketmasternotificatinservice.service;
+package com.ticketmaster.ticketmasternotificationservice.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class EmailService {
 
-    private final JavaMailSender mailSender;
-
-    @Value("${spring.mail.username}")
-    private String fromEmail;
+    @Value("${brevo.api.key}")
+    private String apiKey;
 
     public void sendEmail(String to, String subject, String body) {
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromEmail);
-            message.setTo(to);
-            message.setSubject(subject);
-            message.setText(body);
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("api-key", apiKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
 
-            mailSender.send(message);
+            String requestBody = String.format("""
+                {
+                  "sender": {"email": "noreply@ticketmaster.com", "name": "TicketMaster"},
+                  "to": [{"email": "%s"}],
+                  "subject": "%s",
+                  "textContent": "%s"
+                }
+                """, to, subject, body);
+
+            HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+            restTemplate.postForObject("https://api.brevo.com/v3/smtp/email", entity, String.class);
+
             log.info("Email uğurla göndərildi! Qəbul edən: {}", to);
 
         } catch (Exception e) {
