@@ -3,12 +3,13 @@ server:
 
 spring:
   application:
-    name: TICKETMASTER-NOTIFICATION-SERVICE  # ✅ böyük hərflə
+    name: TICKETMASTER-NOTIFICATION-SERVICE
 
   datasource:
     url: jdbc:postgresql://${DB_HOST:ticketmaster-postgres}:5432/notification_db
     username: postgres
-    password:
+    password: ${DB_PASSWORD:} # Əgər şifre varsa bura gələcək
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -20,13 +21,14 @@ spring:
       group-id: notification-group-v2026
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer  # ✅ dəyişdi
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
+  # ✅ Mailtrap SMTP Ayarları
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: abdullayevala91@gmail.com
-    password: ${MAIL_PASSWORD:senin_app_parolun}
+    host: ${MAIL_HOST:live.smtp.mailtrap.io}
+    port: ${MAIL_PORT:587}
+    username: ${MAILTRAP_USERNAME}
+    password: ${MAILTRAP_PASSWORD}
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
